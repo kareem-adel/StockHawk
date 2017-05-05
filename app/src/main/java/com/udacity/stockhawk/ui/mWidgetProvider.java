@@ -32,7 +32,7 @@ public class mWidgetProvider extends AppWidgetProvider {
             Intent intent = new Intent(context, mWidgetService.class);
             intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId);
             intent.setData(Uri.parse(intent.toUri(Intent.URI_INTENT_SCHEME)));
-            RemoteViews rv = new RemoteViews(context.getPackageName(), R.layout.example_appwidget);
+            RemoteViews rv = new RemoteViews(context.getPackageName(), R.layout.appwidget);
             rv.setOnClickPendingIntent(R.id.widget_container, pendingIntent);
             rv.setRemoteAdapter(R.id.stack_view, intent);
             rv.setEmptyView(R.id.stack_view, R.id.empty_view);

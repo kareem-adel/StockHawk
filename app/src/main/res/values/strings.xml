@@ -1,24 +1,24 @@
 <resources>
     <string name="app_name">Stock Hawk</string>
 
-    <string name="pref_stocks_initialized_key" translatable="false">initialized</string>
+    <string name="pref_stocks_initialized_key">initialized</string>
 
     <string name="pref_stocks_key">stocks</string>
 
 
     <string name="pref_display_mode_key">displayMode</string>
-    <string name="pref_display_mode_default">@string/pref_display_mode_percentage_key</string>
+    <string name="pref_display_mode_default" translatable="false">@string/pref_display_mode_percentage_key</string>
 
     <string name="pref_display_mode_absolute_key">absolute</string>
     <string name="pref_display_mode_percentage_key">percentage</string>
 
-    <string name="default_stocks_yahoo">YHOO</string>
-    <string name="default_stocks_apple">AAPL</string>
-    <string name="default_stocks_microsoft">MSFT</string>
-    <string name="default_stocks_facebook">FB</string>
+    <string name="default_stocks_yahoo" translatable="false">YHOO</string>
+    <string name="default_stocks_apple" translatable="false">AAPL</string>
+    <string name="default_stocks_microsoft" translatable="false">MSFT</string>
+    <string name="default_stocks_facebook" translatable="false">FB</string>
 
 
-    <string name="action_change_units">@string/pref_display_mode_key</string>
+    <string name="action_change_units" translatable="false">@string/pref_display_mode_key</string>
 
 
     <string name="dialog_title">Add Stock</string>
@@ -37,10 +37,11 @@
     <string name="stock_dialog_fragment" translatable="false">StockDialogFragment</string>
     <string name="symbol">symbol</string>
     <string name="stock_history">stockHistory</string>
-    <string name="date_format">MMMM d, yyyy</string>
+    <string name="date_format" translatable="false">MMMM d, yyyy</string>
     <string name="symbol_param" translatable="false">symbol = ?</string>
-    <string name="GOOG">GOOG</string>
-    <string name="stock_value">1000.00</string>
-    <string name="percentage">100%</string>
+    <string name="GOOG" translatable="false">GOOG</string>
+    <string name="stock_value" translatable="false">1000.00</string>
+    <string name="percentage" translatable="false">100%</string>
+    <string name="you_have_no_stocks">You have no stocks !</string>
 
 </resources>
