@@ -10,6 +10,8 @@ public class QuoteIntentService extends IntentService {
 
     public QuoteIntentService() {
         super(QuoteIntentService.class.getSimpleName());
+        System.setProperty("yahoofinance.baseurl.quotes", "http://finance.yahoo.com/d/quotes.csv");
+        System.setProperty("yahoofinance.baseurl.histquotes", "https://ichart.yahoo.com/table.csv");
     }
 
     @Override

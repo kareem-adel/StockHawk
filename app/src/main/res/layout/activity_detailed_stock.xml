@@ -8,7 +8,7 @@
 
 
     <com.github.mikephil.charting.charts.LineChart
-        android:id="@+id/chart1"
+        android:id="@+id/stock_history_chart"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:layout_marginBottom="8dp"

@@ -3,46 +3,45 @@ package com.udacity.stockhawk.ui;
 import android.database.Cursor;
 import android.graphics.Color;
 import android.graphics.DashPathEffect;
-import android.graphics.drawable.Drawable;
 import android.support.v4.app.LoaderManager;
-import android.support.v4.content.ContextCompat;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.view.View;
 
-import com.github.mikephil.charting.charts.CombinedChart;
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.components.AxisBase;
-import com.github.mikephil.charting.components.Legend;
 import com.github.mikephil.charting.components.XAxis;
 import com.github.mikephil.charting.components.YAxis;
-import com.github.mikephil.charting.data.CombinedData;
 import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
 import com.github.mikephil.charting.formatter.IAxisValueFormatter;
-import com.github.mikephil.charting.formatter.IValueFormatter;
 import com.github.mikephil.charting.interfaces.datasets.ILineDataSet;
-import com.github.mikephil.charting.utils.Utils;
-import com.github.mikephil.charting.utils.ViewPortHandler;
 import com.udacity.stockhawk.R;
 import com.udacity.stockhawk.data.Contract;
-import com.udacity.stockhawk.sync.QuoteSyncJob;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 
 public class DetailedStock extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor> {
 
     private static final int STOCK_LOADER = 0;
     private LineChart mChart;
+    private String symbol;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        //this is just a workaround as the api switched to https which is not supported yet by the library
+        System.setProperty("yahoofinance.baseurl.quotes", "http://finance.yahoo.com/d/quotes.csv");
+        System.setProperty("yahoofinance.baseurl.histquotes", "https://ichart.yahoo.com/table.csv");
+
         setContentView(R.layout.activity_detailed_stock);
-        QuoteSyncJob.initialize(this);
+
+        symbol = getIntent().getStringExtra(getString(R.string.symbol));
+
         getSupportLoaderManager().initLoader(STOCK_LOADER, null, this);
     }
 
@@ -51,7 +50,7 @@ public class DetailedStock extends AppCompatActivity implements LoaderManager.Lo
         return new CursorLoader(this,
                 Contract.Quote.URI,
                 Contract.Quote.QUOTE_COLUMNS.toArray(new String[]{}),
-                null, null, Contract.Quote.COLUMN_SYMBOL);
+                getString(R.string.symbol_param), new String[]{symbol}, Contract.Quote.COLUMN_SYMBOL);
     }
 
     @Override
@@ -62,17 +61,17 @@ public class DetailedStock extends AppCompatActivity implements LoaderManager.Lo
 
             String[] historyItems = historicalResult.split("\n");
 
-            ArrayList<Entry> values = new ArrayList<>();
+            final ArrayList<Entry> values = new ArrayList<>();
 
-            int i = 0;
+            int i = historyItems.length;
             for (String historyItem : historyItems) {
                 String[] DatePrice = historyItem.split(", ");
                 String x = DatePrice[0];
                 String y = DatePrice[1];
-                values.add(new Entry(Float.valueOf(x), Float.valueOf(y)));
+                values.add(0, new Entry(i--, Float.valueOf(y), x));
             }
 
-            mChart = (LineChart) findViewById(R.id.chart1);
+            mChart = (LineChart) findViewById(R.id.stock_history_chart);
             mChart.setViewPortOffsets(0, 0, 0, 0);
             mChart.setBackgroundColor(Color.rgb(104, 241, 175));
             mChart.getDescription().setEnabled(false);
@@ -81,31 +80,29 @@ public class DetailedStock extends AppCompatActivity implements LoaderManager.Lo
             mChart.setScaleEnabled(true);
             mChart.setPinchZoom(true);
             mChart.setDrawGridBackground(false);
-            mChart.setMaxHighlightDistance(300);
 
             XAxis x = mChart.getXAxis();
             x.setEnabled(true);
-            x.setPosition(XAxis.XAxisPosition.BOTTOM_INSIDE);
-            x.setGranularity(1f);
+            x.setTextColor(Color.BLUE);
+            x.setPosition(XAxis.XAxisPosition.TOP_INSIDE);
+            x.setLabelCount(3);
             x.setValueFormatter(new IAxisValueFormatter() {
                 @Override
                 public String getFormattedValue(float value, AxisBase axis) {
-                    return "test";
+                    Entry entry = values.get((int) value);
+                    String date = (String) entry.getData();
+                    return new SimpleDateFormat(getString(R.string.date_format)).format(Long.parseLong(date));
                 }
             });
 
             YAxis y = mChart.getAxisLeft();
-            y.setTextColor(Color.WHITE);
+            y.setTextColor(Color.BLUE);
             y.setPosition(YAxis.YAxisLabelPosition.INSIDE_CHART);
             y.setDrawGridLines(false);
-            y.setAxisLineColor(Color.WHITE);
-
+            y.setAxisLineColor(Color.BLACK);
             mChart.getAxisRight().setEnabled(false);
 
             setData(values);
-
-            mChart.getLegend().setEnabled(false);
-            mChart.animateXY(1000, 1000);
 
             mChart.invalidate();
         }
@@ -113,40 +110,34 @@ public class DetailedStock extends AppCompatActivity implements LoaderManager.Lo
 
     private void setData(ArrayList<Entry> values) {
 
-        LineDataSet set1;
+        LineDataSet lineDataSet;
 
         if (mChart.getData() != null
                 && mChart.getData().getDataSetCount() > 0) {
-            set1 = (LineDataSet) mChart.getData().getDataSetByIndex(0);
-            set1.setValues(values);
+            lineDataSet = (LineDataSet) mChart.getData().getDataSetByIndex(0);
+            lineDataSet.setValues(values);
             mChart.getData().notifyDataChanged();
             mChart.notifyDataSetChanged();
         } else {
-            set1 = new LineDataSet(values, "stockHistory");
-            set1.enableDashedLine(10f, 5f, 0f);
-            set1.enableDashedHighlightLine(10f, 5f, 0f);
-            set1.setColor(Color.BLACK);
-            set1.setCircleColor(Color.BLACK);
-            set1.setLineWidth(1f);
-            set1.setCircleRadius(3f);
-            set1.setDrawCircleHole(false);
-            set1.setValueTextSize(9f);
-            set1.setDrawFilled(true);
-            set1.setFormLineWidth(1f);
-            set1.setFormLineDashEffect(new DashPathEffect(new float[]{10f, 5f}, 0f));
-            set1.setFormSize(15.f);
+            lineDataSet = new LineDataSet(values, getString(R.string.stock_history));
+            lineDataSet.enableDashedLine(10f, 5f, 0f);
+            lineDataSet.enableDashedHighlightLine(10f, 5f, 0f);
+            lineDataSet.setColor(Color.BLACK);
+            lineDataSet.setCircleColor(Color.BLACK);
+            lineDataSet.setLineWidth(1f);
+            lineDataSet.setCircleRadius(3f);
+            lineDataSet.setDrawCircleHole(false);
+            lineDataSet.setValueTextSize(9f);
+            lineDataSet.setDrawFilled(true);
+            lineDataSet.setFormLineWidth(1f);
+            lineDataSet.setFormLineDashEffect(new DashPathEffect(new float[]{10f, 5f}, 0f));
+            lineDataSet.setFormSize(15.f);
 
-            set1.setFillColor(Color.BLACK);
+            lineDataSet.setFillColor(Color.BLACK);
 
             ArrayList<ILineDataSet> dataSets = new ArrayList<>();
-            dataSets.add(set1);
+            dataSets.add(lineDataSet);
             LineData data = new LineData(dataSets);
-            data.setValueFormatter(new IValueFormatter() {
-                @Override
-                public String getFormattedValue(float value, Entry entry, int dataSetIndex, ViewPortHandler viewPortHandler) {
-                    return "test";
-                }
-            });
             mChart.setData(data);
         }
 

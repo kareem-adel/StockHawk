@@ -1,14 +1,20 @@
 package com.udacity.stockhawk.sync;
 
+import android.app.Activity;
 import android.app.job.JobInfo;
 import android.app.job.JobScheduler;
+import android.appwidget.AppWidgetManager;
 import android.content.ComponentName;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
+import android.database.Cursor;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.support.v4.content.CursorLoader;
+import android.widget.Toast;
 
+import com.udacity.stockhawk.R;
 import com.udacity.stockhawk.data.Contract;
 import com.udacity.stockhawk.data.PrefUtils;
 
@@ -36,11 +42,16 @@ public final class QuoteSyncJob {
     private static final int INITIAL_BACKOFF = 10000;
     private static final int PERIODIC_ID = 1;
     private static final int YEARS_OF_HISTORY = 2;
+    private static Context context;
+    private static Activity activity;
 
     private QuoteSyncJob() {
+        //this is just a workaround as the api switched to https which is not supported yet by the library
+        System.setProperty("yahoofinance.baseurl.quotes", "http://finance.yahoo.com/d/quotes.csv");
+        System.setProperty("yahoofinance.baseurl.histquotes", "https://ichart.yahoo.com/table.csv");
     }
 
-    static void getQuotes(Context context) {
+    static void getQuotes(final Context context) {
 
         Timber.d("Running sync job");
 
@@ -50,7 +61,13 @@ public final class QuoteSyncJob {
 
         try {
 
-            Set<String> stockPref = PrefUtils.getStocks(context);
+            Cursor cursor = new CursorLoader(context, Contract.Quote.URI, new String[]{Contract.Quote.COLUMN_SYMBOL}, null, null, Contract.Quote.COLUMN_SYMBOL).loadInBackground();
+            Set<String> stockPref = new HashSet<>();
+            while (cursor.moveToNext()) {
+                stockPref.add(cursor.getString(0));
+            }
+            stockPref.addAll(PrefUtils.getStocks(context));
+            //Set<String> stockPref = PrefUtils.getStocks(context);
             Set<String> stockCopy = new HashSet<>();
             stockCopy.addAll(stockPref);
             String[] stockArray = stockPref.toArray(new String[stockPref.size()]);
@@ -69,18 +86,31 @@ public final class QuoteSyncJob {
             ArrayList<ContentValues> quoteCVs = new ArrayList<>();
 
             while (iterator.hasNext()) {
-                String symbol = iterator.next();
+                final String symbol = iterator.next();
 
 
-                Stock stock = quotes.get(symbol);
+                final Stock stock = quotes.get(symbol);
                 StockQuote quote = stock.getQuote();
+
+                if (stock.getName() == null
+                        || quote.getPrice() == null
+                        || quote.getChange() == null
+                        || quote.getChangeInPercent() == null) {
+                    PrefUtils.removeStock(context, symbol);
+                    context.getContentResolver().delete(Contract.Quote.makeUriForStock(symbol), null, null);
+                    activity.runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            Toast.makeText(activity, context.getString(R.string.stock_) + symbol + context.getString(R.string._does_not_exist), Toast.LENGTH_LONG).show();
+                        }
+                    });
+                    continue;
+                }
 
                 float price = quote.getPrice().floatValue();
                 float change = quote.getChange().floatValue();
                 float percentChange = quote.getChangeInPercent().floatValue();
 
-                // WARNING! Don't request historical data for a stock that doesn't exist!
-                // The request will hang forever X_x
                 List<HistoricalQuote> history = stock.getHistory(from, to, Interval.WEEKLY);
 
                 StringBuilder historyBuilder = new StringBuilder();
@@ -116,6 +146,14 @@ public final class QuoteSyncJob {
         } catch (IOException exception) {
             Timber.e(exception, "Error fetching stock quotes");
         }
+
+        //updateWidget(context);
+    }
+
+    public static void updateWidget(Context context) {
+        Intent updateIntent = new Intent();
+        updateIntent.setAction(AppWidgetManager.ACTION_APPWIDGET_UPDATE);
+        context.sendBroadcast(updateIntent);
     }
 
     private static void schedulePeriodic(Context context) {
@@ -136,7 +174,10 @@ public final class QuoteSyncJob {
     }
 
 
-    public static synchronized void initialize(final Context context) {
+    public static synchronized void initialize(final Context context, Activity activity) {
+        QuoteSyncJob.context = context;
+        QuoteSyncJob.activity = activity;
+
 
         schedulePeriodic(context);
         syncImmediately(context);

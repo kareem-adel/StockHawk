@@ -31,5 +31,16 @@
 
     <string name="toast_stock_added_no_connectivity">Symbol %s added. Will refresh when network available.</string>
     <string name="toast_no_connectivity">Will refresh when network available.</string>
+    <string name="add_a_stock">Add a stock</string>
+    <string name="_does_not_exist"> does not exist !</string>
+    <string name="stock_">Stock </string>
+    <string name="stock_dialog_fragment" translatable="false">StockDialogFragment</string>
+    <string name="symbol">symbol</string>
+    <string name="stock_history">stockHistory</string>
+    <string name="date_format">MMMM d, yyyy</string>
+    <string name="symbol_param" translatable="false">symbol = ?</string>
+    <string name="GOOG">GOOG</string>
+    <string name="stock_value">1000.00</string>
+    <string name="percentage">100%</string>
 
 </resources>
